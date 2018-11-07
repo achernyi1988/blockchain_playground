@@ -2,15 +2,24 @@ class Blockchain
 {
 	constructor(size)
 	{
-		///here will be implementation
-		this.size = size;
+		this.chain = [];
+		this.pendingTransactions = [];
 	}
 	
-	getSize()
-	{
-		console.log(this.size);
-		return this.size;
+	createNewBlock(nonce, previousHashData, hash ){
+		const newBlock = {
+			index: this.chain.lenght + 1,
+			timestamp: Date.now(),
+			transactions: this.pendingTransactions,
+			nonce:nonce,
+			previousHashData: previousHashData,
+			hash: hash
+		};
+		this.pendingTransactions = [];
+		this.chain.push(newBlock);
+		return newBlock;
 	}
+	
 }
 
 
