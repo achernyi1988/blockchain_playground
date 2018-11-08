@@ -1,3 +1,6 @@
+
+const sha256 = require('../node_modules/js-sha256/src/sha256');
+
 class Blockchain
 {
 	constructor(size)
@@ -20,6 +23,26 @@ class Blockchain
 		return newBlock;
 	}
 	
+	getLastBlock(){
+		return chain[this.chain.lenght() - 1];
+	}
+	
+	createNewTransaction(amount, sender, recipient){
+		const newTransaction = {
+				amount : amount,
+				sender : sender,
+				recipient : recipient
+		}
+		this.pendingTransactions.push(newTransaction);
+		return this.getLastBlock()['index'] + 1;
+	}
+	
+	hashBlock()
+	{
+		return sha256("ddd");
+	}
+	
+	
 }
 
-
+module.exports = Blockchain;
