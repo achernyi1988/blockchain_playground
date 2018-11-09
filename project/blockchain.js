@@ -11,7 +11,7 @@ class Blockchain
 	
 	createNewBlock(nonce, previousHashData, hash ){
 		const newBlock = {
-			index: this.chain.lenght + 1,
+			index: this.chain.length + 1,
 			timestamp: Date.now(),
 			transactions: this.pendingTransactions,
 			nonce:nonce,
@@ -24,7 +24,7 @@ class Blockchain
 	}
 	
 	getLastBlock(){
-		return chain[this.chain.lenght() - 1];
+		return this.chain[this.chain.length - 1];
 	}
 	
 	createNewTransaction(amount, sender, recipient){
