@@ -7,6 +7,7 @@ class Blockchain
 	{
 		this.chain = [];
 		this.pendingTransactions = [];
+		this.createNewBlock(100, "","");//genesis block...first
 	}
 	
 	createNewBlock(nonce, previousHashData, hash ){
@@ -37,12 +38,22 @@ class Blockchain
 		return this.getLastBlock()['index'] + 1;
 	}
 	
-	hashBlock()
+	hashBlock(previosBlockHash, currentBlockData, nonce)
 	{
-		return sha256("ddd");
+		return sha256(previosBlockHash + nonce.toString() + JSON.stringify(currentBlockData));
 	}
 	
-	
+	proofOfWork(previosBlockHash, currentBlockData)
+	{
+		let nonce = 0; 
+		let hash = this.hashBlock(previosBlockHash, currentBlockData, nonce);
+		
+		while(hash.substring(0,4) !== "0000"){
+			nonce++;
+		    hash = this.hashBlock(previosBlockHash, currentBlockData, nonce);
+		}
+		return nonce;
+	}
 }
 
 module.exports = Blockchain;
