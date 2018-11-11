@@ -3,12 +3,13 @@
  "version": "1.0.0",
  "description": "initial",
  "scripts": {
-  "start": "nodemon --watch project -e js project/expressClient.js"
+  "start": "nodemon --watch project -e js project/expressServer.js"
  },
  "dependencies": {
   "body-parser": "^1.18.3",
   "express": "^4.16.4",
   "nodemon": "^1.18.6",
-  "sha256": "^0.2.0"
+  "sha256": "^0.2.0",
+  "uuid": "^3.3.2"
  }
 }

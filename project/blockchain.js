@@ -1,5 +1,5 @@
 
-const sha256 = require('../node_modules/js-sha256/src/sha256');
+const sha256 = require('../node_modules/sha256');
 
 class Blockchain
 {
