@@ -12,6 +12,8 @@ class Blockchain
 		
 		this.currentNodeUrl = currentNodeUrl;
 		this.networkNodes = [];
+
+        
 	}
 	
 	createNewBlock(nonce, previousHashData, hash ){
@@ -25,6 +27,8 @@ class Blockchain
 		};
 		this.pendingTransactions = [];
 		this.chain.push(newBlock);
+
+
 		return newBlock;
 	}
 	
@@ -54,7 +58,7 @@ class Blockchain
 		
 		while(hash.substring(0,4) !== "0000"){
 			nonce++;
-		    hash = this.hashBlock(previosBlockHash, currentBlockData, nonce);
+		    hash = hashBlock(previosBlockHash, currentBlockData, nonce);
 		}
 		return nonce;
 	}
