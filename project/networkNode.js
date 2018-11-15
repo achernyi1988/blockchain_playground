@@ -22,8 +22,31 @@ app.get('/blockchain', function (req, res) {
 });
  
 app.post('/transaction',function(req, res){
-	const blockIndex = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
-	res.json({ note: 'The transaction will be added in block ' + blockIndex });
+	const newTransaction = req.body;
+
+	const blockIndex = bitcoin.addTransactionToPendingTransaction(newTransaction);
+	
+	res.json({note: `Transaction will be added in block ${blockIndex} ...`});
+});
+
+app.post("/transaction/broadcast", function (req, res){
+    const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
+
+    bitcoin.addTransactionToPendingTransaction(newTransaction);
+    const requestNodesPromises = [];
+
+    bitcoin.networkNodes.forEach(networkNodeUrl =>{
+
+        const requestOptions = {
+            uri: networkNodeUrl + "/transaction",
+            method: "POST",
+            body: newTransaction,
+            json: true
+        };
+        rp(requestOptions);
+    });
+
+    res.json({note: "transaction created and broadcast successfully."});
 });
 
 app.get('/mine',function(req, res){
@@ -35,23 +58,72 @@ app.get('/mine',function(req, res){
 			transactions: bitcoin.pendingTransactions,
 			index: lastBlock["index"] + 1
 	}
-	
+
 	const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
-	ы
+
 	const hash = bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce);
-	
-	
-	bitcoin.createNewTransaction("12.5", "00", nodeAddress);
-	
+
 	const newBlock = bitcoin.createNewBlock(nonce, previousBlockHash, hash);
-	
-	res.json({
-		note: "New block mined successfully",
-		block: newBlock
-	});
-	
-}); 
- 
+
+    const requestNodesPromises = [];
+    bitcoin.networkNodes.forEach(networkNode =>{
+
+        const requestOption = {
+            url:networkNode + "/receive-new-block",
+            method: "POST",
+            body: {newBlock: newBlock},
+            json: true
+        };
+        requestNodesPromises.push(rp(requestOption));
+    });
+    Promise.all(requestNodesPromises)
+        .then(data =>{
+            const requestOption = {
+                url:bitcoin.currentNodeUrl + "/transaction/broadcast",
+                method: "POST",
+                body: {
+                    amount: 12.5,
+                    sender: "00",
+                    recipient: nodeAddress
+                },
+                json: true
+            };
+            return rp(requestOption);
+        })
+        .then(data =>{
+            res.json({
+                note: "New block mined successfully",
+                block: newBlock
+            });
+        });
+});
+
+app.post('/receive-new-block',function(req, res){
+
+	const newBlock = req.body.newBlock;
+	const lastBlock = bitcoin.getLastBlock();
+
+	const correctHash = lastBlock.hash === newBlock.previousHashData;
+	const correctIndex = lastBlock["index"] + 1 === newBlock["index"];
+
+	if(correctHash && correctIndex){
+		bitcoin.chain.push(newBlock);
+		bitcoin.pendingTransactions = [];
+		res.json({
+			note: "New block received and accepted",
+			newBlock: newBlock
+		});
+	}
+	else{
+        res.json({
+            note: "New block rejected",
+            newBlock: newBlock
+        });
+	}
+
+});
+
+
 
 app.post("/register-and-broadcast-node", function (req, res){
 	const newNodeUrl = req.body.newNodeUrl;
@@ -84,7 +156,7 @@ app.post("/register-and-broadcast-node", function (req, res){
 		};
 		return rp(bulkRegster);
 	})
-		.then( data => {
+	.then( data => {
             res.json({note: "New node registered with network successfully."});
 		});
 });
