@@ -30,7 +30,7 @@ app.post('/transaction',function(req, res){
 });
 
 app.post("/transaction/broadcast", function (req, res){
-    const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recepient);
+    const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
 
     bitcoin.addTransactionToPendingTransaction(newTransaction);
     const requestNodesPromises = [];
@@ -58,7 +58,7 @@ app.get('/mine',function(req, res){
 			transactions: bitcoin.pendingTransactions,
 			index: lastBlock["index"] + 1
 	}
-	
+
 	const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
 
 	const hash = bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce);
@@ -98,32 +98,28 @@ app.get('/mine',function(req, res){
         });
 });
 
-app.get('/receive-new-block',function(req, res){
+app.post('/receive-new-block',function(req, res){
 
-    const lastBlock = bitcoin.getLastBlock();
-    const previousBlockHash = lastBlock["hash"];
+	const newBlock = req.body.newBlock;
+	const lastBlock = bitcoin.getLastBlock();
 
-    const currentBlockData = {
-        transactions: bitcoin.pendingTransactions,
-        index: lastBlock["index"] + 1
-    }
+	const correctHash = lastBlock.hash === newBlock.previousHashData;
+	const correctIndex = lastBlock["index"] + 1 === newBlock["index"];
 
-    const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
-
-    const hash = bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce);
-
-
-    bitcoin.createNewTransaction("12.5", "00", nodeAddress);
-
-    const newBlock = bitcoin.createNewBlock(nonce, previousBlockHash, hash);
-
-    res.json({
-        note: "New block mined successfully",
-        block: newBlock
-    });
-
-
-    bitcoin.createNewTransaction("12.5", "00", nodeAddress);
+	if(correctHash && correctIndex){
+		bitcoin.chain.push(newBlock);
+		bitcoin.pendingTransactions = [];
+		res.json({
+			note: "New block received and accepted",
+			newBlock: newBlock
+		});
+	}
+	else{
+        res.json({
+            note: "New block rejected",
+            newBlock: newBlock
+        });
+	}
 
 });
 
