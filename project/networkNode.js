@@ -60,20 +60,72 @@ app.get('/mine',function(req, res){
 	}
 	
 	const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
-	ы
+
 	const hash = bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce);
-	
-	
-	bitcoin.createNewTransaction("12.5", "00", nodeAddress);
-	
+
 	const newBlock = bitcoin.createNewBlock(nonce, previousBlockHash, hash);
-	
-	res.json({
-		note: "New block mined successfully",
-		block: newBlock
-	});
-	
-}); 
+
+    const requestNodesPromises = [];
+    bitcoin.networkNodes.forEach(networkNode =>{
+
+        const requestOption = {
+            url:networkNode + "/receive-new-block",
+            method: "POST",
+            body: {newBlock: newBlock},
+            json: true
+        };
+        requestNodesPromises.push(rp(requestOption));
+    });
+    Promise.all(requestNodesPromises)
+        .then(data =>{
+            const requestOption = {
+                url:bitcoin.currentNodeUrl + "/transaction/broadcast",
+                method: "POST",
+                body: {
+                    amount: 12.5,
+                    sender: "00",
+                    recipient: nodeAddress
+                },
+                json: true
+            };
+            return rp(requestOption);
+        })
+        .then(data =>{
+            res.json({
+                note: "New block mined successfully",
+                block: newBlock
+            });
+        });
+});
+
+app.get('/receive-new-block',function(req, res){
+
+    const lastBlock = bitcoin.getLastBlock();
+    const previousBlockHash = lastBlock["hash"];
+
+    const currentBlockData = {
+        transactions: bitcoin.pendingTransactions,
+        index: lastBlock["index"] + 1
+    }
+
+    const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
+
+    const hash = bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce);
+
+
+    bitcoin.createNewTransaction("12.5", "00", nodeAddress);
+
+    const newBlock = bitcoin.createNewBlock(nonce, previousBlockHash, hash);
+
+    res.json({
+        note: "New block mined successfully",
+        block: newBlock
+    });
+
+
+    bitcoin.createNewTransaction("12.5", "00", nodeAddress);
+
+});
 
 
 
