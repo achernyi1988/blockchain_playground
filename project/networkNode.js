@@ -265,8 +265,7 @@ app.get("/address/:address", function(req, res){
     const address = req.params.address;
     const transactionData = bitcoin.getAddressData(address);
     res.json({
-        addressTransactions: transactionData.addressTransactions,
-        addressBalance: transactionData.addressBalance
+        addressData: transactionData
     });
 
 });
