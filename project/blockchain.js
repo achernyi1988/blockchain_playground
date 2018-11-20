@@ -9,7 +9,7 @@ class Blockchain
 	{
 		this.chain = [];
 		this.pendingTransactions = [];
-		this.createNewBlock(100, "","");//genesis block...first
+		this.createNewBlock(100, "0","0");//genesis block...first
 		
 		this.currentNodeUrl = currentNodeUrl;
 		this.networkNodes = [];
@@ -32,6 +32,32 @@ class Blockchain
 	getLastBlock(){
 		return this.chain[this.chain.length - 1];
 	}
+
+    isChainValid(blockchain){
+	    let validChain = true;
+
+	    for(var i = 1; i < blockchain.length; i++){
+	        const currentBlock = blockchain[i];
+	        const previousBlock = blockchain[i - 1];
+	        const blockHash = this.hashBlock(previousBlock["hash"],
+                    {transactions: currentBlock["transactions"], index: currentBlock["index"]}, currentBlock["nonce"] );
+
+	        if(blockHash.substring(0,4) !== "0000") validChain = false;
+	        if(currentBlock["previousHashData"] !== previousBlock["hash"]) validChain = false;
+
+            console.log("previousBlockHash =>", previousBlock["hash"]);
+            console.log("currentBlockHash =>", currentBlock["hash"]);
+            console.log("blockHash =>", blockHash);
+        }
+
+        const genesisBlock = blockchain[0];
+
+        let validGenesis = (genesisBlock["nonce"] === 100 && genesisBlock["previousHashData"] === "0" &&
+                     genesisBlock["hash"] === "0"   && genesisBlock["transactions"].length === 0);
+
+        return validChain && validGenesis;
+    }
+
 	
 	createNewTransaction(amount, sender, recipient){
 		const newTransaction = {
@@ -52,19 +78,19 @@ class Blockchain
 	
 	
 	
-	hashBlock(previosBlockHash, currentBlockData, nonce)
+	hashBlock(previousBlockHash, currentBlockData, nonce)
 	{
-		return sha256(previosBlockHash + nonce.toString() + JSON.stringify(currentBlockData));
+		return sha256(previousBlockHash + nonce.toString() + JSON.stringify(currentBlockData));
 	}
 	
-	proofOfWork(previosBlockHash, currentBlockData)
+	proofOfWork(previousBlockHash, currentBlockData)
 	{
 		let nonce = 0; 
-		let hash = this.hashBlock(previosBlockHash, currentBlockData, nonce);
+		let hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
 		
 		while(hash.substring(0,4) !== "0000"){
 			nonce++;
-		    hash = this.hashBlock(previosBlockHash, currentBlockData, nonce);
+		    hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
 		}
 		return nonce;
 	}
