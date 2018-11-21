@@ -237,6 +237,43 @@ app.get("/consensus", function(req, res){
 
 });
 
+app.get("/block/:blockHash", function(req, res){ // localhost:3001/block/HADHAHDHSJDK
+
+    const blockHash = req.params.blockHash;
+    const block = bitcoin.getBlock(blockHash);
+
+    res.json({
+        block: block
+    });
+
+});
+
+app.get("/transaction/:transactionId", function(req, res){
+
+    const id = req.params.transactionId;
+    const transactionData = bitcoin.getTransaction(id);
+
+    res.json({
+        transaction: transactionData.transaction,
+        block: transactionData.block
+    });
+
+});
+
+app.get("/address/:address", function(req, res){
+
+    const address = req.params.address;
+    const transactionData = bitcoin.getAddressData(address);
+    res.json({
+        addressData: transactionData
+    });
+
+});
+
+app.get("/block-explorer", function(req, res){
+    res.sendFile("./block_explorer/index.html", {root: __dirname});
+});
+
 
 app.listen(port, function (){
 	console.log(`Listening at port ${port}...`);

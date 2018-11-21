@@ -64,7 +64,7 @@ class Blockchain
 				amount : amount,
 				sender : sender,
 				recipient : recipient,
-				transactionID: uuid().split("-").join("")
+            transactionID: uuid().split("-").join("")
 		}
 		return newTransaction;
 
@@ -94,6 +94,63 @@ class Blockchain
 		}
 		return nonce;
 	}
-}
+
+	getBlock(blockHash){
+		let foundBlock = null;
+		this.chain.forEach(block => {
+			if(block.hash === blockHash)
+			{
+                foundBlock = block;
+			}
+
+		});
+
+		return foundBlock;
+	}
+
+	getTransaction(id){
+		let transactionFound= null;
+        let foundBlock = null;
+        this.chain.forEach(block => {
+        	block.transactions.forEach( transaction => {
+
+                if(transaction.transactionID === id)
+                {
+                    transactionFound = transaction;
+                    foundBlock = block;
+                }
+			});
+        });
+
+        return {
+        	transaction: transactionFound,
+			block: foundBlock
+		};
+	}
+
+	getAddressData(address){
+        let addressTransactions = [];
+
+        this.chain.forEach(block => {
+            block.transactions.forEach( transaction => {
+
+                if(transaction.sender === address || transaction.recipient === address )
+                {
+                    addressTransactions.push(transaction);
+                }
+            });
+        });
+        let balance = 0;
+
+        addressTransactions.forEach(transaction => {
+        	if(transaction.sender === address) balance -= transaction.amount;
+            if(transaction.recipient === address) balance += transaction.amount;
+		});
+        return {
+            addressTransactions: addressTransactions,
+            addressBalance: balance
+		}
+	}
+};
 
 module.exports = Blockchain;
