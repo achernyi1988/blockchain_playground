@@ -34,12 +34,35 @@
                         class="btn btn-primary margin-auto btn-search">
                     Search
                 </button>
-                <p ng-if="!block && !transaction && !addressData && initialSearchMade" class="no-data-text">
-                    No data found for search.
-                </p>
             </form>
         </div>
     </div>
+
+
+    <!-- 'transaction form -->
+
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <form ng-submit="createTransaction(sender, recipient, amount)">
+                <div class="form-group">
+                    <input type="text" class="form-control" ng-model="sender">
+                    <input type="text" class="form-control" ng-model="recipient">
+                    <input type="text" class="form-control" ng-model="amount">
+                    <output name="result" class="form-control" >{{transactionResult}} </output>
+                </div>
+
+                <button
+                        type="submit"
+                        class="btn btn-primary margin-auto btn-search">
+                    Create Transaction
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+
+
     <div class="row">
         <div class="col-md-10 offset-md-1">
 
@@ -127,6 +150,7 @@
         $scope.block = null;
         $scope.transaction = null;
         $scope.addressData = null;
+        $scope.transactionResult = "IDLE";
         $scope.initialSearchMade = false;
         $scope.fetchBlock = function(blockHash) {
             console.log("getBlock by http: ", blockHash);
@@ -156,10 +180,16 @@
                     $scope.transaction = null;
                 });
         };
+        $scope.sendTransaction = function(sender, recipient, amount) {
+            $http.post(`/create-transaction/${sender}/${recipient}/${amount}`)
+                .then(response => {
+                    $scope.transactionResult = response.data.result;
+                    console.log("sendTransaction result =  ", $scope.transactionResult);
+                });
+        };
         $scope.search = function(searchValue) {
             $scope.initialSearchMade = true;
             if ($scope.searchType === 'block') {
-                console.log("fetchBlock: ", searchValue);
                 $scope.fetchBlock(searchValue);
             }
             else if ($scope.searchType === 'transaction') {
@@ -168,6 +198,11 @@
             else if ($scope.searchType === 'address') {
                 $scope.fetchAddressData(searchValue);
             }
+        };
+        $scope.createTransaction = function(sender, recipient, amount) {
+            $scope.initialSearchMade = true;
+            console.log("createTransaction: ", sender, recipient, amount);
+            $scope.sendTransaction(sender, recipient, amount);
         };
     });
 </script>

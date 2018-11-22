@@ -83,7 +83,8 @@ class Blockchain
 		};
 
         this.updateBalanceAddress(amount, sender, recipient);
-
+        console.log("createNewTransaction pendingTransitionBalanceAddress =" , this.pendingTransitionBalanceAddress);
+        console.log("createNewTransaction balanceAddress =" , this.balanceAddress);
 		return newTransaction;
 	}
 

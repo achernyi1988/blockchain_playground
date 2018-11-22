@@ -7,7 +7,8 @@ const rp = require('request-promise');
 const rewardsAddress = "00";
 
 const port = process.argv[2];
-
+const SUCCESS = "SUCCESS";
+const FAILED = "FAILED";
 
 var bitcoin = new Blockchain();
 var app = express();
@@ -35,8 +36,7 @@ app.post("/transaction/broadcast", function (req, res){
 
     if(rewardsAddress != req.body.sender && !bitcoin.isBalanceAddressValid(req.body.sender, req.body.amount ))
     {
-        res.json({note: "required amount is bigger then sender has"});
-        return;
+        return res.json({note: "required amount is bigger then sender has", result: FAILED});
     }
 
     const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
@@ -54,7 +54,8 @@ app.post("/transaction/broadcast", function (req, res){
         rp(requestOptions);
     });
 
-    res.json({note: "transaction created and broadcast successfully."});
+    res.json({note: "transaction created and broadcast successfully.",
+              result: SUCCESS});
 });
 
 app.post("/register-and-broadcast-node", function (req, res){
@@ -282,10 +283,40 @@ app.get("/address/:address", function(req, res){
 
 });
 
+app.post("/create-transaction/:sender/:recipient/:amount", function(req, res){
+
+    const sender = req.params.sender;
+    const recipient = req.params.recipient;
+    const amount = Number(req.params.amount);
+
+    console.log("create-transaction sender = ", sender);
+    console.log("create-transaction recipient = ", recipient);
+    console.log("create-transaction amount = ", amount);
+
+    const requestOption = {
+        url:bitcoin.currentNodeUrl + "/transaction/broadcast",
+        method: "POST",
+        body: {
+            amount: amount,
+            sender: sender,
+            recipient: recipient
+        },
+        resolveWithFullResponse: true,
+        json: true
+    };
+    rp(requestOption)
+        .then(function (response){
+            console.log("response  with status = ", response.body.result);
+            res.json({
+                result: response.body.result == SUCCESS ? SUCCESS : FAILED
+            });
+    });
+});
+
+
 app.get("/block-explorer", function(req, res){
     res.sendFile("./block_explorer/index.html", {root: __dirname});
 });
-
 
 app.listen(port, function (){
 	console.log(`Listening at port ${port}...`);
