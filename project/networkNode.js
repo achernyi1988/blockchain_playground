@@ -4,6 +4,7 @@ var Blockchain = require('./blockchain');
 const uuid = require("uuid/v1");
 const rp = require('request-promise');
 
+const rewardsAddress = "00";
 
 const port = process.argv[2];
 
@@ -30,10 +31,17 @@ app.post('/transaction',function(req, res){
 });
 
 app.post("/transaction/broadcast", function (req, res){
+
+
+    if(rewardsAddress != req.body.sender && !bitcoin.isBalanceAddressValid(req.body.sender, req.body.amount ))
+    {
+        res.json({note: "required amount is bigger then sender has"});
+        return;
+    }
+
     const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
 
     bitcoin.addTransactionToPendingTransaction(newTransaction);
-    const requestNodesPromises = [];
 
     bitcoin.networkNodes.forEach(networkNodeUrl =>{
 
@@ -48,7 +56,6 @@ app.post("/transaction/broadcast", function (req, res){
 
     res.json({note: "transaction created and broadcast successfully."});
 });
-
 
 app.post("/register-and-broadcast-node", function (req, res){
 	const newNodeUrl = req.body.newNodeUrl;
@@ -116,6 +123,11 @@ app.post("/register-nodes-bulk", function (req, res){
 
 app.get('/mine',function(req, res){
 
+    if(bitcoin.pendingTransactions.length <= 0){
+        return res.json({
+            note: "no transactions available"
+        });
+    }
     const lastBlock = bitcoin.getLastBlock();
     const previousBlockHash = lastBlock["hash"];
 
@@ -148,7 +160,7 @@ app.get('/mine',function(req, res){
                 method: "POST",
                 body: {
                     amount: 12.5,
-                    sender: "00",
+                    sender: rewardsAddress,
                     recipient: nodeAddress
                 },
                 json: true

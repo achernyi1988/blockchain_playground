@@ -3,6 +3,17 @@ const sha256 = require('../node_modules/sha256');
 const currentNodeUrl = process.argv[3];
 const uuid = require("uuid/v1");
 
+function cloneMap(pendingTransitionBalanceAddress, balanceAddress){
+    var map1 = new Map(pendingTransitionBalanceAddress);
+
+    var iterator1 = map1[Symbol.iterator]();
+
+    for (let item of iterator1) {
+        const key = item[0];
+        const value = item[1];
+        balanceAddress.set(key,value );
+    }
+}
 class Blockchain
 {
 	constructor(size)
@@ -13,6 +24,8 @@ class Blockchain
 		
 		this.currentNodeUrl = currentNodeUrl;
 		this.networkNodes = [];
+		this.balanceAddress = new Map([["Alex", 1000],["Elena",1000]]);
+        this.pendingTransitionBalanceAddress = new Map(this.balanceAddress);
 	}
 	
 	createNewBlock(nonce, previousHashData, hash ){
@@ -24,11 +37,18 @@ class Blockchain
 			previousHashData: previousHashData,
 			hash: hash
 		};
-		this.pendingTransactions = [];
+
+        cloneMap(this.pendingTransitionBalanceAddress, this.balanceAddress );
+        console.log("createNewBlock pendingTransitionBalanceAddress =" , this.pendingTransitionBalanceAddress);
+        console.log("createNewBlock balanceAddress =" , this.balanceAddress);
+
+        this.pendingTransactions = [];
 		this.chain.push(newBlock);
 		return newBlock;
 	}
-	
+
+
+
 	getLastBlock(){
 		return this.chain[this.chain.length - 1];
 	}
@@ -44,10 +64,6 @@ class Blockchain
 
 	        if(blockHash.substring(0,4) !== "0000") validChain = false;
 	        if(currentBlock["previousHashData"] !== previousBlock["hash"]) validChain = false;
-
-            console.log("previousBlockHash =>", previousBlock["hash"]);
-            console.log("currentBlockHash =>", currentBlock["hash"]);
-            console.log("blockHash =>", blockHash);
         }
 
         const genesisBlock = blockchain[0];
@@ -58,36 +74,39 @@ class Blockchain
         return validChain && validGenesis;
     }
 
-	
 	createNewTransaction(amount, sender, recipient){
 		const newTransaction = {
 				amount : amount,
 				sender : sender,
 				recipient : recipient,
             transactionID: uuid().split("-").join("")
-		}
-		return newTransaction;
+		};
 
+        this.updateBalanceAddress(amount, sender, recipient);
+
+		return newTransaction;
 	}
-	
+
+
+
 	addTransactionToPendingTransaction(obj)
 	{
 		this.pendingTransactions.push(obj);
 		return this.getLastBlock()['index'] + 1;
 	}
-	
-	
-	
+
+
+
 	hashBlock(previousBlockHash, currentBlockData, nonce)
 	{
 		return sha256(previousBlockHash + nonce.toString() + JSON.stringify(currentBlockData));
 	}
-	
+
 	proofOfWork(previousBlockHash, currentBlockData)
 	{
-		let nonce = 0; 
+		let nonce = 0;
 		let hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
-		
+
 		while(hash.substring(0,4) !== "0000"){
 			nonce++;
 		    hash = this.hashBlock(previousBlockHash, currentBlockData, nonce);
@@ -113,7 +132,6 @@ class Blockchain
         let foundBlock = null;
         this.chain.forEach(block => {
         	block.transactions.forEach( transaction => {
-
                 if(transaction.transactionID === id)
                 {
                     transactionFound = transaction;
@@ -140,17 +158,54 @@ class Blockchain
                 }
             });
         });
+
         let balance = 0;
 
-        addressTransactions.forEach(transaction => {
-        	if(transaction.sender === address) balance -= transaction.amount;
-            if(transaction.recipient === address) balance += transaction.amount;
-		});
+        if(this.balanceAddress.has(address)){
+            balance = this.balanceAddress.get(address);
+        }
         return {
             addressTransactions: addressTransactions,
             addressBalance: balance
 		}
 	}
+
+	isBalanceAddressValid(address , amount){
+
+	    if(this.pendingTransitionBalanceAddress.has(address))
+        {
+            let value = this.pendingTransitionBalanceAddress.get(address);
+
+            if(value - amount >= 0 ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    updateBalanceAddress (amount, sender, recipient){
+        if(this.pendingTransitionBalanceAddress.has(recipient)){
+            let balance = this.pendingTransitionBalanceAddress.get(recipient);
+            balance += amount;
+            this.pendingTransitionBalanceAddress.set(recipient, balance);
+        }
+        else
+        {
+            this.pendingTransitionBalanceAddress.set(recipient, amount);
+        }
+
+        if(this.pendingTransitionBalanceAddress.has(sender)){
+            let balance = this.pendingTransitionBalanceAddress.get(sender);
+
+            balance -= amount;
+            this.pendingTransitionBalanceAddress.set(sender, balance);
+        }
+        else
+        {
+            this.pendingTransitionBalanceAddress.set(sender, 0);
+        }
+    }
 };
 
 module.exports = Blockchain;

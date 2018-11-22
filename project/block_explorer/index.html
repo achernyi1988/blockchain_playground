@@ -123,16 +123,19 @@
 <script>
     window.app = angular.module('BlockExplorer', []);
     app.controller('MainController', function($scope, $http) {
+        console.log("getBlock");
         $scope.block = null;
         $scope.transaction = null;
         $scope.addressData = null;
         $scope.initialSearchMade = false;
         $scope.fetchBlock = function(blockHash) {
+            console.log("getBlock by http: ", blockHash);
             $http.get(`/block/${blockHash}`)
                 .then(response => {
                     $scope.block = response.data.block;
                     $scope.transaction = null;
                     $scope.addressData = null;
+                    console.log("got Block ", $scope.block );
                 });
         };
         $scope.fetchTransaction = function(transactionId) {
@@ -147,8 +150,8 @@
             $http.get(`/address/${address}`)
                 .then(response => {
                     $scope.addressData = response.data.addressData;
-                    if (!$scope.addressData.addressTransactions.length) $scope
-                        .addressData = null;
+                    if (!$scope.addressData.addressTransactions.length)
+                        $scope.addressData = null;
                     $scope.block = null;
                     $scope.transaction = null;
                 });
@@ -156,6 +159,7 @@
         $scope.search = function(searchValue) {
             $scope.initialSearchMade = true;
             if ($scope.searchType === 'block') {
+                console.log("fetchBlock: ", searchValue);
                 $scope.fetchBlock(searchValue);
             }
             else if ($scope.searchType === 'transaction') {
